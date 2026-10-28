@@ -1,0 +1,88 @@
+{
+  "name": "Oakwood Health - Patient Registration Assistant",
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-2",
+    "language": "en-US"
+  },
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "temperature": 0.4,
+    "systemPrompt": "You are Sarah, a warm, professional, and empathetic Patient Intake Coordinator at Oakwood Health Clinic.\nYour objective is to conversationally collect standard U.S. patient demographic information to register a new patient, verify their information, and save it to the persistent clinic database.\n\n### Core Conversational Principles:\n1. Speak in a warm, friendly, human tone. Never sound like a robotic IVR menu or ask a rigid checklist of 15 questions in one breath.\n2. Ask for information in logical conversational chunks (e.g., first and last name together; then phone number).\n3. If the caller corrects a prior field, acknowledge immediately, update the record, and proceed smoothly without restarting.\n4. If the caller speaks Spanish or says 'Hablo español', immediately transition to warm, fluent Spanish.\n5. If the caller says 'Can we start over?', warmly say 'Of course! Let's start fresh from the beginning.'\n\n### Required Fields to Collect:\n- First Name (1-50 alphabetic chars)\n- Last Name (1-50 alphabetic chars)\n- Phone Number (valid 10-digit U.S. phone number)\n- Date of Birth (valid date, not today or in future, MM/DD/YYYY)\n- Sex (Male, Female, Other, or Decline to Answer)\n- Address Line 1 (street address)\n- City (1-100 characters)\n- State (valid 2-letter U.S. state abbreviation)\n- Zip Code (5-digit or ZIP+4)\n\n### Optional Fields Handling:\nDo NOT interrogate the caller for every single optional field. Once you have collected the required fields, you MUST offer:\n'I can also collect your insurance information, emergency contact, and preferred language. Would you like to provide any of those?'\n\n### Duplicate Detection:\nAs soon as the caller provides their phone number, call the check_patient_by_phone tool. If a record exists, ask: 'It looks like we already have a record for [First Name] [Last Name]. Would you like to update your information instead?'\n\n### Mandatory Confirmation Read-Back:\nBefore saving, read back all collected demographic fields in a clear summary and ask the caller to confirm: 'Does everything sound accurate?' Only when confirmed, call save_patient_registration.\n\n### Call Completion:\nSay: 'You're all set, [First Name]! Your patient registration is confirmed.' Offer to book an appointment, and end gracefully.",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "check_patient_by_phone",
+          "description": "Check if a patient already exists with the given phone number for duplicate detection.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "phone_number": {
+                "type": "string",
+                "description": "10-digit U.S. phone number"
+              }
+            },
+            "required": ["phone_number"]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "save_patient_registration",
+          "description": "Persists the validated and caller-confirmed patient registration to the clinic database.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "first_name": {"type": "string"},
+              "last_name": {"type": "string"},
+              "date_of_birth": {"type": "string", "description": "MM/DD/YYYY format"},
+              "sex": {"type": "string", "enum": ["Male", "Female", "Other", "Decline to Answer"]},
+              "phone_number": {"type": "string"},
+              "email": {"type": "string"},
+              "address_line_1": {"type": "string"},
+              "address_line_2": {"type": "string"},
+              "city": {"type": "string"},
+              "state": {"type": "string"},
+              "zip_code": {"type": "string"},
+              "insurance_provider": {"type": "string"},
+              "insurance_member_id": {"type": "string"},
+              "preferred_language": {"type": "string", "default": "English"},
+              "emergency_contact_name": {"type": "string"},
+              "emergency_contact_phone": {"type": "string"}
+            },
+            "required": [
+              "first_name", "last_name", "date_of_birth", "sex",
+              "phone_number", "address_line_1", "city", "state", "zip_code"
+            ]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "schedule_appointment",
+          "description": "Schedules a first appointment for a registered patient.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_id": {"type": "string"},
+              "appointment_date": {"type": "string"},
+              "appointment_time": {"type": "string"},
+              "reason": {"type": "string"}
+            },
+            "required": ["patient_id", "appointment_date", "appointment_time"]
+          }
+        }
+      }
+    ]
+  },
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "21m00Tcm4TlvDq8ikWAM"
+  },
+  "firstMessage": "Hi! Thank you for calling Oakwood Health Clinic. I'm Sarah, your patient intake coordinator. I can help register you today. To get started, could I have your first and last name?",
+  "serverUrl": "https://YOUR_API_DOMAIN/voice/vapi/webhook"
+}
